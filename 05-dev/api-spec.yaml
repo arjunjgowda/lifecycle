@@ -1,24 +1,52 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: Rate Limiter Middleware Spec
+  title: Rate Limiting Error Responses
   version: 1.0.0
-paths:
-  /check:
-    get:
-      summary: Internal check for rate limit status
-      responses:
-        '200':
-          description: Request Allowed
-          headers:
-            X-RateLimit-Remaining:
-              schema:
-                type: integer
-        '429':
-          description: Too Many Requests
-          headers:
-            Retry-After:
-              schema:
-                type: integer
-            X-RateLimit-Limit:
-              schema:
-                type: integer
+components:
+  headers:
+    RateLimit-Limit:
+      description: The maximum number of requests that the consumer is permitted to make per window.
+      schema:
+        type: integer
+      example: 1000
+    RateLimit-Remaining:
+      description: The number of requests remaining in the current rate limit window.
+      schema:
+        type: integer
+      example: 45
+    RateLimit-Reset:
+      description: The time at which the current rate limit window resets in UTC epoch seconds.
+      schema:
+        type: integer
+      example: 1680000000
+    Retry-After:
+      description: How long to wait before making a new request (in seconds). Present only on 429.
+      schema:
+        type: integer
+      example: 30
+  responses:
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        X-RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: "rate_limit_exceeded"
+                  message:
+                    type: string
+                    example: "API quota exceeded."

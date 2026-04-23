@@ -1,15 +1,28 @@
-# UI/UX Specs: Rate Limit States
+# UI/UX Specifications: Rate Limiting Error States
 
-## 1. Interaction Design
-- **Trigger:** User exceeds their allotted quota.
-- **Action:** Intercept the outgoing request and prevent it from hitting the server (to save bandwidth).
+## 1. API Response Format
+When a request is blocked, the server must return HTTP Status `429 Too Many Requests`. The JSON body must follow the standard error schema:
 
-## 2. Visual States
-- **Toast Notification:** A red-themed toast at the top right: "Slow down! You've reached your limit. Try again in 45 seconds."
-- **Disabled Buttons:** If the system knows the user is throttled, primary action buttons should become disabled with a tooltip explaining why.
+```json
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "You have exceeded your API quota of 1000 requests per hour.",
+    "details": {
+      "retry_after_seconds": 45,
+      "upgrade_url": "https://dashboard.example.com/billing"
+    }
+  }
+}
+```
 
-## 3. Empty States
-- If a dashboard fails to load due to rate limiting, show a "Quota Exceeded" illustration with a link to "Upgrade to Pro" for higher limits.
+## 2. Frontend Application Handling
+The frontend application (React/Vue) must implement a global Axios/Fetch interceptor to catch `429` responses.
 
-## 4. Documentation
-- Link to API docs explaining how to use `Retry-After` headers for programmatic users.
+**Behavior:**
+1. **Toast Notification:** Display a warning toast: `"Rate limit reached. Pausing requests for X seconds."` (Parse X from the `Retry-After` header).
+2. **Exponential Backoff:** If the frontend is making automated polling requests, it must halt polling and wait exactly the duration specified in the `Retry-After` header before resuming.
+3. **Button Disabling:** If the user triggered an action (e.g., clicking "Save" repeatedly), disable the button and show a countdown timer inside the button.
+
+## 3. Developer Portal Documentation
+Update the public documentation portal to explain the Token Bucket algorithm to end-users so they understand that they don't have to wait for a full hour to reset; tokens "trickle" back in continuously. Include examples of reading the `X-RateLimit-*` headers in Python and Node.js.
