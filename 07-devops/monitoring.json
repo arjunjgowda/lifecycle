@@ -1,0 +1,22 @@
+{
+  "dashboard": {
+    "title": "API Rate Limiting Metrics",
+    "panels": [
+      {
+        "title": "Blocked Requests (429s) per Second",
+        "type": "graph",
+        "targets": [{ "expr": "rate(http_requests_total{status='429'}[1m])" }]
+      },
+      {
+        "title": "Redis Latency (Limiter Check)",
+        "type": "gauge",
+        "targets": [{ "expr": "redis_cmd_duration_seconds{cmd='get'}" }]
+      },
+      {
+        "title": "Top Throttled API Keys",
+        "type": "table",
+        "targets": [{ "expr": "topk(10, count(rate_limit_hits_total) by (api_key))" }]
+      }
+    ]
+  }
+}

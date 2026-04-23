@@ -1,0 +1,24 @@
+openapi: 3.0.0
+info:
+  title: Rate Limiter Middleware Spec
+  version: 1.0.0
+paths:
+  /check:
+    get:
+      summary: Internal check for rate limit status
+      responses:
+        '200':
+          description: Request Allowed
+          headers:
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+        '429':
+          description: Too Many Requests
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+            X-RateLimit-Limit:
+              schema:
+                type: integer
